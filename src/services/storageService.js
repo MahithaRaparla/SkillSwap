@@ -46,9 +46,6 @@ export const initializeStorage = () => {
   if (!localStorage.getItem(KEYS.USERS)) {
     safeSave(KEYS.USERS, INITIAL_USERS);
   }
-  if (!localStorage.getItem(KEYS.CURRENT_USER)) {
-    safeSave(KEYS.CURRENT_USER, INITIAL_USERS[0]); // Alex Rivera as default demo user
-  }
   if (!localStorage.getItem(KEYS.SKILLS)) {
     safeSave(KEYS.SKILLS, INITIAL_SKILLS);
   }
@@ -81,16 +78,18 @@ export const initializeStorage = () => {
 export const getUsers = () => safeParse(KEYS.USERS, INITIAL_USERS);
 export const saveUsers = (users) => safeSave(KEYS.USERS, users);
 
-export const getCurrentUser = () => safeParse(KEYS.CURRENT_USER, INITIAL_USERS[0]);
+export const getCurrentUser = () => safeParse(KEYS.CURRENT_USER, null);
 export const setCurrentUser = (user) => {
-  safeSave(KEYS.CURRENT_USER, user);
   if (user) {
+    safeSave(KEYS.CURRENT_USER, user);
     const users = getUsers();
-    const idx = users.findIndex((u) => u.id === user.id);
+    const idx = users.findIndex((u) => u.id === user.id || u._id === user._id);
     if (idx !== -1) {
       users[idx] = { ...users[idx], ...user };
       saveUsers(users);
     }
+  } else {
+    localStorage.removeItem(KEYS.CURRENT_USER);
   }
 };
 
@@ -104,12 +103,10 @@ export const login = (emailOrUsername, password) => {
 
   if (found) {
     setCurrentUser(found);
-    return { success: true, user: found, token: `demo_token_${found.id}` };
+    return { success: true, user: found, token: `demo_token_${found.id || found._id}` };
   }
-  // Default to first user if demo mode login
-  const defaultUser = users[0] || INITIAL_USERS[0];
-  setCurrentUser(defaultUser);
-  return { success: true, user: defaultUser, token: `demo_token_${defaultUser.id}` };
+
+  return { success: false, error: 'Invalid email/username or password.' };
 };
 
 export const register = (userData) => {

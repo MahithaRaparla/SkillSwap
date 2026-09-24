@@ -56,9 +56,14 @@ export const DataProvider = ({ children }) => {
         const notifsData = await api.getNotifications();
         setNotifications(notifsData);
         storageService.saveNotifications(notifsData);
+      } else {
+        setGoals([]);
+        setActivities([]);
+        setConnections([]);
+        setNotifications([]);
       }
     } catch (error) {
-      console.warn('Backend API unavailable, using local storage:', error.message);
+      console.warn('Backend API unavailable:', error.message);
       setUsers(storageService.getUsers());
       setSkills(storageService.getSkills());
 
@@ -67,6 +72,11 @@ export const DataProvider = ({ children }) => {
         setActivities(storageService.getActivities());
         setConnections(storageService.getConnections());
         setNotifications(storageService.getNotifications());
+      } else {
+        setGoals([]);
+        setActivities([]);
+        setConnections([]);
+        setNotifications([]);
       }
     } finally {
       setLoadingData(false);

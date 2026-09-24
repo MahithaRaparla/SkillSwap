@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 
 export const LandingPage = () => {
-  const { currentUser, loginAsDemoUser } = useAuth();
+  const { currentUser } = useAuth();
   const { users, skills, connections } = useData();
   const navigate = useNavigate();
 
@@ -83,15 +83,6 @@ export const LandingPage = () => {
                 >
                   Explore Skills
                 </Link>
-                <button
-                  onClick={() => {
-                    loginAsDemoUser('user_alex_rivera');
-                    navigate('/dashboard');
-                  }}
-                  className="px-6 py-3.5 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 border border-purple-500/30 font-bold text-xs transition-all flex items-center gap-2"
-                >
-                  <Sparkles className="w-4 h-4 text-purple-400" /> Try Demo Account (Alex)
-                </button>
               </>
             )}
           </div>

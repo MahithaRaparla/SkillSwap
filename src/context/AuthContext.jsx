@@ -14,23 +14,24 @@ export const AuthProvider = ({ children }) => {
       if (token) {
         try {
           const user = await api.getCurrentUser();
-          setCurrentUser(user);
-          storageService.setCurrentUser(user);
-        } catch (error) {
-          console.warn('Backend Auth Error, using local session:', error.message);
-          const localUser = storageService.getCurrentUser();
-          if (localUser) {
-            setCurrentUser(localUser);
+          if (user && (user.id || user._id)) {
+            setCurrentUser(user);
+            storageService.setCurrentUser(user);
           } else {
             localStorage.removeItem('skillswap_token');
+            storageService.setCurrentUser(null);
             setCurrentUser(null);
           }
+        } catch (error) {
+          console.warn('Invalid or expired authentication token:', error.message);
+          localStorage.removeItem('skillswap_token');
+          storageService.setCurrentUser(null);
+          setCurrentUser(null);
         }
       } else {
-        const localUser = storageService.getCurrentUser();
-        if (localUser) {
-          setCurrentUser(localUser);
-        }
+        localStorage.removeItem('skillswap_token');
+        storageService.setCurrentUser(null);
+        setCurrentUser(null);
       }
       setLoading(false);
     };
@@ -41,61 +42,51 @@ export const AuthProvider = ({ children }) => {
   const login = async (emailOrUsername, password) => {
     try {
       const data = await api.login(emailOrUsername, password);
-      if (data.token) {
+      if (data && data.token) {
         localStorage.setItem('skillswap_token', data.token);
+        setCurrentUser(data);
+        storageService.setCurrentUser(data);
+        return { success: true, user: data };
       }
-      setCurrentUser(data);
-      storageService.setCurrentUser(data);
-      return { success: true, user: data };
+      return { success: false, error: data?.message || 'Invalid email/username or password.' };
     } catch (error) {
-      console.warn('API login failed, using local authentication:', error.message);
-      const res = storageService.login(emailOrUsername, password);
-      if (res.token) {
-        localStorage.setItem('skillswap_token', res.token);
-      }
-      setCurrentUser(res.user);
-      return res;
+      console.error('Login error:', error.message);
+      return { success: false, error: error.message || 'Invalid email/username or password.' };
     }
   };
 
   const register = async (userData) => {
     try {
       const data = await api.register(userData);
-      if (data.token) {
+      if (data && data.token) {
         localStorage.setItem('skillswap_token', data.token);
+        setCurrentUser(data);
+        storageService.setCurrentUser(data);
+        return { success: true, user: data };
       }
-      setCurrentUser(data);
-      storageService.setCurrentUser(data);
-      return { success: true, user: data };
+      return { success: false, error: data?.message || 'Registration failed.' };
     } catch (error) {
-      console.warn('API register failed, registering locally:', error.message);
-      const res = storageService.register(userData);
-      if (res.token) {
-        localStorage.setItem('skillswap_token', res.token);
-      }
-      setCurrentUser(res.user);
-      return res;
+      console.error('Registration error:', error.message);
+      return { success: false, error: error.message || 'Registration failed.' };
     }
   };
 
   const logout = () => {
     localStorage.removeItem('skillswap_token');
+    storageService.setCurrentUser(null);
     setCurrentUser(null);
   };
 
   const updateProfile = async (updatedFields) => {
     try {
       const updatedUser = await api.updateProfile(updatedFields);
-      setCurrentUser(updatedUser);
-      storageService.setCurrentUser(updatedUser);
-      return { success: true, user: updatedUser };
-    } catch (error) {
-      console.warn('API updateProfile failed, updating locally:', error.message);
-      const updated = storageService.updateUserProfile(currentUser.id, updatedFields);
-      if (updated) {
-        setCurrentUser(updated);
-        return { success: true, user: updated };
+      if (updatedUser) {
+        setCurrentUser(updatedUser);
+        storageService.setCurrentUser(updatedUser);
+        return { success: true, user: updatedUser };
       }
+      return { success: false, error: 'Failed to update profile' };
+    } catch (error) {
       return { success: false, error: error.message };
     }
   };

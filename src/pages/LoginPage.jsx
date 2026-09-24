@@ -1,17 +1,18 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Sparkles, Mail, Lock, ArrowRight, CheckCircle2, ShieldAlert } from 'lucide-react';
+import { Sparkles, Mail, Lock, ArrowRight, ShieldAlert } from 'lucide-react';
 
 export const LoginPage = () => {
-  const { login, loginAsDemoUser } = useAuth();
+  const { login } = useAuth();
   const navigate = useNavigate();
 
-  const [emailOrUsername, setEmailOrUsername] = useState('alex@example.com');
-  const [password, setPassword] = useState('password123');
+  const [emailOrUsername, setEmailOrUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
@@ -20,17 +21,15 @@ export const LoginPage = () => {
       return;
     }
 
-    const res = login(emailOrUsername, password);
+    setLoading(true);
+    const res = await login(emailOrUsername, password);
+    setLoading(false);
+
     if (res.success) {
       navigate('/dashboard');
     } else {
-      setError(res.error || 'Invalid credentials.');
+      setError(res.error || 'Invalid email/username or password.');
     }
-  };
-
-  const handleQuickDemo = (userId) => {
-    loginAsDemoUser(userId);
-    navigate('/dashboard');
   };
 
   return (
@@ -41,7 +40,7 @@ export const LoginPage = () => {
             <Sparkles className="w-6 h-6 animate-pulse" />
           </div>
           <h2 className="text-2xl font-extrabold text-white tracking-tight">Welcome back to SkillSwap</h2>
-          <p className="text-xs text-slate-400 mt-1">Log in to track goals, log sessions, and swap skills.</p>
+          <p className="text-xs text-slate-400 mt-1">Log in with your MongoDB user credentials.</p>
         </div>
 
         {error && (
@@ -84,32 +83,12 @@ export const LoginPage = () => {
 
           <button
             type="submit"
-            className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-xs shadow-lg shadow-indigo-600/25 transition-all flex items-center justify-center gap-2"
+            disabled={loading}
+            className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-xs shadow-lg shadow-indigo-600/25 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
           >
-            Log In to Dashboard <ArrowRight className="w-4 h-4" />
+            {loading ? 'Authenticating...' : 'Log In to Dashboard'} <ArrowRight className="w-4 h-4" />
           </button>
         </form>
-
-        {/* Quick Demo Login Preset Buttons */}
-        <div className="mb-6 pt-4 border-t border-slate-800">
-          <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2 text-center">
-            Instant Demo Logins:
-          </p>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              onClick={() => handleQuickDemo('user_alex_rivera')}
-              className="px-3 py-2 text-[11px] font-bold rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 transition-colors text-left"
-            >
-              🚀 Alex (Student Dev)
-            </button>
-            <button
-              onClick={() => handleQuickDemo('user_sarah_chen')}
-              className="px-3 py-2 text-[11px] font-bold rounded-lg bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 border border-purple-500/30 transition-colors text-left"
-            >
-              🎨 Sarah (UX Designer)
-            </button>
-          </div>
-        </div>
 
         <p className="text-center text-xs text-slate-400">
           Don't have a profile yet?{' '}
@@ -119,7 +98,7 @@ export const LoginPage = () => {
         </p>
 
         <div className="mt-6 p-3 rounded-xl bg-slate-900/60 border border-slate-800 text-[10px] text-slate-500 text-center">
-          ℹ️ LocalStorage Demonstration App • Authentication is simulated client-side.
+          🔒 Secured with JWT Authentication & MongoDB Atlas
         </div>
       </div>
     </div>

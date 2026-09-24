@@ -6,6 +6,8 @@ import { EmptyState } from '../components/ui/EmptyState';
 import { Link2, Check, X, UserMinus, Clock, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
+const getId = (v) => (typeof v === 'object' && v ? (v.id || v._id?.toString()) : v);
+
 export const ConnectionsPage = () => {
   const { currentUser } = useAuth();
   const { users, skills, connections, updateConnectionStatus } = useData();
@@ -13,24 +15,26 @@ export const ConnectionsPage = () => {
 
   const [activeTab, setActiveTab] = useState('connected'); // 'connected' | 'pending' | 'requests'
 
+  const currentUserId = getId(currentUser);
+
   // Accepted Connections
   const acceptedConns = connections.filter(
-    (c) => (c.requesterId === currentUser?.id || c.receiverId === currentUser?.id) && c.status === 'Accepted'
+    (c) => (getId(c.requesterId) === currentUserId || getId(c.receiverId) === currentUserId) && c.status === 'Accepted'
   );
 
   // Incoming Requests
   const incomingRequests = connections.filter(
-    (c) => c.receiverId === currentUser?.id && c.status === 'Pending'
+    (c) => getId(c.receiverId) === currentUserId && c.status === 'Pending'
   );
 
   // Outgoing Sent Requests
   const outgoingRequests = connections.filter(
-    (c) => c.requesterId === currentUser?.id && c.status === 'Pending'
+    (c) => getId(c.requesterId) === currentUserId && c.status === 'Pending'
   );
 
   const getConnectedUserObj = (conn) => {
-    const targetId = conn.requesterId === currentUser?.id ? conn.receiverId : conn.requesterId;
-    return users.find((u) => u.id === targetId);
+    const targetId = getId(conn.requesterId) === currentUserId ? getId(conn.receiverId) : getId(conn.requesterId);
+    return users.find((u) => getId(u) === targetId);
   };
 
   return (

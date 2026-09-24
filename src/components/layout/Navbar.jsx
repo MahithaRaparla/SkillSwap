@@ -9,23 +9,16 @@ import {
   User,
   LogOut,
   Settings,
-  ChevronDown,
-  Layers,
-  Award,
-  CheckCircle2,
-  Users,
-  TrendingUp,
-  RotateCcw
+  ChevronDown
 } from 'lucide-react';
 
 export const Navbar = () => {
-  const { currentUser, logout, loginAsDemoUser } = useAuth();
-  const { notifications, markNotifRead, markAllNotifsRead, searchQuery, setSearchQuery, users } = useData();
+  const { currentUser, logout } = useAuth();
+  const { notifications, markNotifRead, markAllNotifsRead, searchQuery, setSearchQuery } = useData();
   const navigate = useNavigate();
 
   const [showNotifMenu, setShowNotifMenu] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [showDemoModal, setShowDemoModal] = useState(false);
 
   const unreadNotifs = notifications.filter((n) => !n.read && (n.userId === currentUser?.id || !n.userId));
 
@@ -68,16 +61,6 @@ export const Navbar = () => {
         <div className="flex items-center gap-3">
           {currentUser ? (
             <>
-              {/* Quick Demo Switcher Pill */}
-              <button
-                onClick={() => setShowDemoModal(true)}
-                className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl bg-purple-500/10 text-purple-300 border border-purple-500/30 hover:bg-purple-500/20 transition-colors"
-                title="Switch active demo profile"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-                <span>Switch Demo User</span>
-              </button>
-
               {/* Notifications Dropdown */}
               <div className="relative">
                 <button
@@ -185,7 +168,7 @@ export const Navbar = () => {
                       onClick={() => setShowUserMenu(false)}
                       className="flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
                     >
-                      <Settings className="w-4 h-4 text-indigo-400" /> Settings & Export
+                      <Settings className="w-4 h-4 text-indigo-400" /> Settings
                     </Link>
 
                     <button
@@ -220,58 +203,6 @@ export const Navbar = () => {
           )}
         </div>
       </div>
-
-      {/* Demo Switcher Modal */}
-      {showDemoModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
-          <div className="w-full max-w-lg glass-card bg-slate-900 border-slate-700 p-6 rounded-2xl shadow-2xl">
-            <h3 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
-              <RotateCcw className="w-5 h-5 text-purple-400" /> Select Demo Profile
-            </h3>
-            <p className="text-xs text-slate-400 mb-4">
-              Switch session to test skill-matching and recommendations from different user perspectives:
-            </p>
-
-            <div className="max-h-64 overflow-y-auto space-y-2 pr-1 mb-6">
-              {users.map((u) => (
-                <div
-                  key={u.id}
-                  onClick={() => {
-                    loginAsDemoUser(u.id);
-                    setShowDemoModal(false);
-                    navigate('/dashboard');
-                  }}
-                  className={`p-3 rounded-xl border flex items-center justify-between cursor-pointer transition-all ${
-                    u.id === currentUser?.id
-                      ? 'bg-purple-950/60 border-purple-500 text-white'
-                      : 'bg-slate-800/60 border-slate-700/60 hover:border-purple-500/50 text-slate-300'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <img src={u.avatar} alt={u.fullName} className="w-9 h-9 rounded-full object-cover" />
-                    <div>
-                      <p className="text-xs font-bold text-white">{u.fullName}</p>
-                      <p className="text-[11px] text-slate-400">{u.status} • {u.location}</p>
-                    </div>
-                  </div>
-                  {u.id === currentUser?.id && (
-                    <span className="text-[10px] font-extrabold px-2 py-0.5 rounded bg-purple-500 text-white">
-                      Active
-                    </span>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            <button
-              onClick={() => setShowDemoModal(false)}
-              className="w-full py-2.5 text-xs font-bold rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-colors"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
     </header>
   );
 };

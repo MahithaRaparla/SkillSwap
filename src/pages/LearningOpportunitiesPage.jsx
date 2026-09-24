@@ -5,10 +5,13 @@ import { getTopMatchesForUser } from '../services/matchingService';
 import { MatchCard } from '../components/cards/MatchCard';
 import { Sparkles, ArrowLeftRight, CheckCircle2 } from 'lucide-react';
 
+const getId = (v) => (typeof v === 'object' && v ? (v.id || v._id?.toString()) : v);
+
 export const LearningOpportunitiesPage = () => {
   const { currentUser } = useAuth();
   const { users, skills, connections, sendConnectionRequest } = useData();
 
+  const currentUserId = getId(currentUser);
   const matches = getTopMatchesForUser(currentUser, users, skills, 10);
 
   return (
@@ -24,16 +27,17 @@ export const LearningOpportunitiesPage = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {matches.map((match, idx) => {
+          const matchUserId = getId(match.user);
           const isConn = connections.some(
             (c) =>
-              ((c.requesterId === currentUser?.id && c.receiverId === match.user.id) ||
-                (c.requesterId === match.user.id && c.receiverId === currentUser?.id)) &&
+              ((getId(c.requesterId) === currentUserId && getId(c.receiverId) === matchUserId) ||
+                (getId(c.requesterId) === matchUserId && getId(c.receiverId) === currentUserId)) &&
               c.status === 'Accepted'
           );
           const isPend = connections.some(
             (c) =>
-              ((c.requesterId === currentUser?.id && c.receiverId === match.user.id) ||
-                (c.requesterId === match.user.id && c.receiverId === currentUser?.id)) &&
+              ((getId(c.requesterId) === currentUserId && getId(c.receiverId) === matchUserId) ||
+                (getId(c.requesterId) === matchUserId && getId(c.receiverId) === currentUserId)) &&
               c.status === 'Pending'
           );
 

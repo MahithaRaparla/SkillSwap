@@ -2,6 +2,8 @@ import React from 'react';
 import { MapPin, Briefcase, GraduationCap, CheckCircle2, UserPlus, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
+const getId = (v) => (typeof v === 'object' && v ? (v.id || v._id?.toString()) : v);
+
 export const UserCard = ({
   user,
   skillsOffered = [],
@@ -14,6 +16,7 @@ export const UserCard = ({
   isPending = false
 }) => {
   const navigate = useNavigate();
+  const userId = getId(user);
 
   return (
     <div className="glass-card-hover p-6 flex flex-col justify-between relative group">
@@ -123,7 +126,7 @@ export const UserCard = ({
       {/* Action Buttons */}
       <div className="flex items-center gap-2 pt-4 border-t border-slate-800">
         <button
-          onClick={() => navigate(`/profile/${user.id}`)}
+          onClick={() => navigate(`/profile/${userId}`)}
           className="flex-1 py-2 text-xs font-semibold rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-colors"
         >
           View Profile
@@ -141,7 +144,7 @@ export const UserCard = ({
         {onConnect && (
           <button
             disabled={isConnected || isPending}
-            onClick={() => onConnect(user.id)}
+            onClick={() => onConnect(userId)}
             className={`px-3 py-2 text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all ${
               isConnected
                 ? 'bg-slate-800 text-emerald-400 border border-emerald-500/30 cursor-default'

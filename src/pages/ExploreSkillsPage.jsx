@@ -5,6 +5,8 @@ import { UserCard } from '../components/cards/UserCard';
 import { Search, Compass, BookOpen, Filter, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
+const getId = (v) => (typeof v === 'object' && v ? (v.id || v._id?.toString()) : v);
+
 export const ExploreSkillsPage = () => {
   const { skills, users, connections, sendConnectionRequest } = useData();
   const navigate = useNavigate();
@@ -27,7 +29,7 @@ export const ExploreSkillsPage = () => {
   const matchingTeachers = selectedSkill
     ? users.filter((u) =>
         skills.some(
-          (s) => s.userId === u.id && s.type === 'teach' && s.name.toLowerCase() === selectedSkill.toLowerCase()
+          (s) => getId(s.userId) === getId(u) && s.type === 'teach' && s.name.toLowerCase() === selectedSkill.toLowerCase()
         )
       )
     : [];
@@ -129,8 +131,9 @@ export const ExploreSkillsPage = () => {
           {matchingTeachers.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {matchingTeachers.map((user) => {
-                const userOffered = skills.filter((s) => s.userId === user.id && s.type === 'teach');
-                const userWanted = skills.filter((s) => s.userId === user.id && s.type === 'learn');
+                const uId = getId(user);
+                const userOffered = skills.filter((s) => getId(s.userId) === uId && s.type === 'teach');
+                const userWanted = skills.filter((s) => getId(s.userId) === uId && s.type === 'learn');
 
                 return (
                   <UserCard

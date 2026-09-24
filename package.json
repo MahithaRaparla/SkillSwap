@@ -1,10 +1,13 @@
 {
   "name": "skillbridge",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "client": "vite",
+    "server": "cd server && npm run dev",
+    "seed": "cd server && npm run seed",
     "build": "vite build",
     "lint": "oxlint",
     "preview": "vite preview"

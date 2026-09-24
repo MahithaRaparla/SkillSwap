@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Sparkles, User, Mail, Lock, MapPin, Briefcase, GraduationCap, ArrowRight, ShieldAlert } from 'lucide-react';
+import { Sparkles, ArrowRight, ShieldAlert } from 'lucide-react';
 
 export const RegisterPage = () => {
   const { register } = useAuth();
@@ -21,6 +21,7 @@ export const RegisterPage = () => {
   });
 
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const interestOptions = [
     'Programming',
@@ -43,7 +44,7 @@ export const RegisterPage = () => {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
@@ -56,7 +57,8 @@ export const RegisterPage = () => {
       return;
     }
 
-    const res = register({
+    setLoading(true);
+    const res = await register({
       fullName: formData.fullName,
       username: formData.username,
       email: formData.email,
@@ -67,6 +69,7 @@ export const RegisterPage = () => {
       bio: formData.bio,
       interests: formData.interests
     });
+    setLoading(false);
 
     if (res.success) {
       navigate('/dashboard');
@@ -178,7 +181,8 @@ export const RegisterPage = () => {
               >
                 <option value="Student">Student</option>
                 <option value="Professional">Professional</option>
-                <option value="Other">Other</option>
+                <option value="Hobbyist">Hobbyist</option>
+                <option value="Educator">Educator</option>
               </select>
             </div>
             <div>
@@ -229,9 +233,10 @@ export const RegisterPage = () => {
 
           <button
             type="submit"
-            className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-xs shadow-lg shadow-indigo-600/25 transition-all flex items-center justify-center gap-2 mt-4"
+            disabled={loading}
+            className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-xs shadow-lg shadow-indigo-600/25 transition-all flex items-center justify-center gap-2 mt-4 disabled:opacity-50"
           >
-            Create Profile & Start Swapping <ArrowRight className="w-4 h-4" />
+            {loading ? 'Creating Account...' : 'Create Profile & Start Swapping'} <ArrowRight className="w-4 h-4" />
           </button>
         </form>
 

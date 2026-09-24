@@ -37,7 +37,7 @@ export const Sidebar = () => {
     { to: '/history', label: 'Activity History', icon: History },
     { to: '/analytics', label: 'Analytics & Growth', icon: TrendingUp },
     { to: '/achievements', label: 'Achievements', icon: Trophy },
-    { to: '/settings', label: 'Settings & Data', icon: Settings }
+    { to: '/settings', label: 'Settings', icon: Settings }
   ];
 
   return (
@@ -85,7 +85,7 @@ export const Sidebar = () => {
       </div>
 
       <div className="pt-4 border-t border-slate-800 text-[11px] text-slate-500 text-center">
-        SkillSwap Network v1.0 • Client-Side LocalStorage
+        SkillBridge v2.0 • Full-Stack Express & MongoDB
       </div>
     </aside>
   );

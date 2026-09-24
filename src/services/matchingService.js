@@ -1,17 +1,22 @@
 // Client-side Skill Matching Engine
 
+const getId = (v) => (typeof v === 'object' && v ? (v.id || v._id?.toString()) : v);
+
 export const calculateSkillMatch = (userA, userB, allSkills = []) => {
-  if (!userA || !userB || userA.id === userB.id) {
+  const idA = getId(userA);
+  const idB = getId(userB);
+
+  if (!userA || !userB || idA === idB) {
     return { matchScore: 0, explanation: 'Same user', isMutual: false, matchType: 'None' };
   }
 
   // Get skills for User A
-  const userASkills = allSkills.filter((s) => s.userId === userA.id && s.active !== false);
+  const userASkills = allSkills.filter((s) => getId(s.userId) === idA && s.active !== false);
   const userATeach = userASkills.filter((s) => s.type === 'teach');
   const userALearn = userASkills.filter((s) => s.type === 'learn');
 
   // Get skills for User B
-  const userBSkills = allSkills.filter((s) => s.userId === userB.id && s.active !== false);
+  const userBSkills = allSkills.filter((s) => getId(s.userId) === idB && s.active !== false);
   const userBTeach = userBSkills.filter((s) => s.type === 'teach');
   const userBLearn = userBSkills.filter((s) => s.type === 'learn');
 
@@ -85,7 +90,8 @@ export const calculateSkillMatch = (userA, userB, allSkills = []) => {
 export const getTopMatchesForUser = (user, allUsers = [], allSkills = [], limit = 6) => {
   if (!user) return [];
 
-  const otherUsers = allUsers.filter((u) => u.id !== user.id);
+  const userId = getId(user);
+  const otherUsers = allUsers.filter((u) => getId(u) !== userId);
 
   const matched = otherUsers.map((targetUser) => {
     const result = calculateSkillMatch(user, targetUser, allSkills);

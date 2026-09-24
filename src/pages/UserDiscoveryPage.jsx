@@ -6,6 +6,8 @@ import { UserCard } from '../components/cards/UserCard';
 import { Modal } from '../components/ui/Modal';
 import { Search, Users, Filter, Sparkles, X, MapPin, Briefcase, CheckCircle2, ArrowRight } from 'lucide-react';
 
+const getId = (v) => (typeof v === 'object' && v ? (v.id || v._id?.toString()) : v);
+
 export const UserDiscoveryPage = () => {
   const { currentUser } = useAuth();
   const { users, skills, connections, sendConnectionRequest, searchQuery, setSearchQuery } = useData();
@@ -14,12 +16,14 @@ export const UserDiscoveryPage = () => {
   const [statusFilter, setStatusFilter] = useState('All');
   const [selectedMatchUser, setSelectedMatchUser] = useState(null);
 
-  const otherUsers = users.filter((u) => u.id !== currentUser?.id);
+  const currentUserId = getId(currentUser);
+  const otherUsers = users.filter((u) => getId(u) !== currentUserId);
 
   // Calculate matches and filter
   const processedUsers = otherUsers.map((u) => {
-    const uTeach = skills.filter((s) => s.userId === u.id && s.type === 'teach');
-    const uLearn = skills.filter((s) => s.userId === u.id && s.type === 'learn');
+    const uId = getId(u);
+    const uTeach = skills.filter((s) => getId(s.userId) === uId && s.type === 'teach');
+    const uLearn = skills.filter((s) => getId(s.userId) === uId && s.type === 'learn');
 
     const matchInfo = currentUser ? calculateSkillMatch(currentUser, u, skills) : { matchScore: 50 };
 
@@ -129,16 +133,17 @@ export const UserDiscoveryPage = () => {
       {/* Users Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredUsers.map(({ user, skillsOffered, skillsWanted, matchScore, matchType }) => {
+          const uId = getId(user);
           const isConn = connections.some(
             (c) =>
-              ((c.requesterId === currentUser?.id && c.receiverId === user.id) ||
-                (c.requesterId === user.id && c.receiverId === currentUser?.id)) &&
+              ((getId(c.requesterId) === currentUserId && getId(c.receiverId) === uId) ||
+                (getId(c.requesterId) === uId && getId(c.receiverId) === currentUserId)) &&
               c.status === 'Accepted'
           );
           const isPend = connections.some(
             (c) =>
-              ((c.requesterId === currentUser?.id && c.receiverId === user.id) ||
-                (c.requesterId === user.id && c.receiverId === currentUser?.id)) &&
+              ((getId(c.requesterId) === currentUserId && getId(c.receiverId) === uId) ||
+                (getId(c.requesterId) === uId && getId(c.receiverId) === currentUserId)) &&
               c.status === 'Pending'
           );
 

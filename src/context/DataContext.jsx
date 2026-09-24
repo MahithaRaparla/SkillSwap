@@ -1,30 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import {
-  getUsers,
-  getSkills,
-  getGoals,
-  getActivities,
-  getConnections,
-  getNotifications,
-  getUnlockedAchievements,
-  getPreferences,
-  addSkill as apiAddSkill,
-  updateSkill as apiUpdateSkill,
-  deleteSkill as apiDeleteSkill,
-  addGoal as apiAddGoal,
-  updateGoal as apiUpdateGoal,
-  deleteGoal as apiDeleteGoal,
-  addActivity as apiAddActivity,
-  deleteActivity as apiDeleteActivity,
-  sendConnectionRequest as apiSendConnectionRequest,
-  updateConnectionStatus as apiUpdateConnectionStatus,
-  markNotificationAsRead as apiMarkNotifRead,
-  markAllNotificationsAsRead as apiMarkAllNotifsRead,
-  exportDataJSON,
-  importDataJSON,
-  resetAllData as apiResetAllData
-} from '../services/storageService';
-
+import { api } from '../services/api';
+import * as storageService from '../services/storageService';
 import { checkAndUnlockAchievements } from '../services/achievementService';
 import { useAuth } from './AuthContext';
 
@@ -40,6 +16,7 @@ export const DataProvider = ({ children }) => {
   const [notifications, setNotifications] = useState([]);
   const [achievements, setAchievements] = useState([]);
   const [preferences, setPreferences] = useState({});
+  const [loadingData, setLoadingData] = useState(false);
 
   // Toast alert & modal state
   const [toast, setToast] = useState(null);
@@ -48,15 +25,52 @@ export const DataProvider = ({ children }) => {
   // Global search state
   const [searchQuery, setSearchQuery] = useState('');
 
-  const refreshAllData = () => {
-    setUsers(getUsers());
-    setSkills(getSkills());
-    setGoals(getGoals());
-    setActivities(getActivities());
-    setConnections(getConnections());
-    setNotifications(getNotifications());
-    setAchievements(getUnlockedAchievements());
-    setPreferences(getPreferences());
+  useEffect(() => {
+    storageService.initializeStorage();
+  }, []);
+
+  const refreshAllData = async () => {
+    setLoadingData(true);
+    try {
+      const usersData = await api.getUsers();
+      setUsers(usersData);
+      storageService.saveUsers(usersData);
+
+      const skillsData = await api.getSkills();
+      setSkills(skillsData);
+      storageService.saveSkills(skillsData);
+
+      if (currentUser) {
+        const goalsData = await api.getGoals();
+        setGoals(goalsData);
+        storageService.saveGoals(goalsData);
+
+        const activitiesData = await api.getActivities();
+        setActivities(activitiesData);
+        storageService.saveActivities(activitiesData);
+
+        const connectionsData = await api.getConnections();
+        setConnections(connectionsData);
+        storageService.saveConnections(connectionsData);
+
+        const notifsData = await api.getNotifications();
+        setNotifications(notifsData);
+        storageService.saveNotifications(notifsData);
+      }
+    } catch (error) {
+      console.warn('Backend API unavailable, using local storage:', error.message);
+      setUsers(storageService.getUsers());
+      setSkills(storageService.getSkills());
+
+      if (currentUser) {
+        setGoals(storageService.getGoals());
+        setActivities(storageService.getActivities());
+        setConnections(storageService.getConnections());
+        setNotifications(storageService.getNotifications());
+      }
+    } finally {
+      setLoadingData(false);
+    }
   };
 
   useEffect(() => {
@@ -68,6 +82,10 @@ export const DataProvider = ({ children }) => {
     setTimeout(() => {
       setToast(null);
     }, 4000);
+  };
+
+  const clearToast = () => {
+    setToast(null);
   };
 
   // Achievement unlock check helper
@@ -82,15 +100,19 @@ export const DataProvider = ({ children }) => {
     );
 
     if (newlyUnlocked.length > 0) {
-      setAchievements(getUnlockedAchievements());
-      setNotifications(getNotifications());
-      setUnlockedAchievementModal(newlyUnlocked[0]); // Show first unlocked badge
+      setUnlockedAchievementModal(newlyUnlocked[0]);
     }
   };
 
   // Skill Operations
-  const handleAddSkill = (skillData) => {
-    const newSkill = apiAddSkill({ userId: currentUser?.id, ...skillData });
+  const handleAddSkill = async (skillData) => {
+    let newSkill;
+    try {
+      newSkill = await api.addSkill(skillData);
+    } catch (error) {
+      console.warn('API addSkill failed, adding locally:', error.message);
+      newSkill = storageService.addSkill({ userId: currentUser?.id, ...skillData });
+    }
     const updatedSkills = [...skills, newSkill];
     setSkills(updatedSkills);
     showToast(`Added "${newSkill.name}" to your skills!`);
@@ -98,23 +120,43 @@ export const DataProvider = ({ children }) => {
     return newSkill;
   };
 
-  const handleUpdateSkill = (id, fields) => {
-    const updated = apiUpdateSkill(id, fields);
-    const updatedSkills = skills.map((s) => (s.id === id ? updated : s));
-    setSkills(updatedSkills);
-    showToast('Skill updated successfully.');
-    return updated;
+  const handleUpdateSkill = async (id, fields) => {
+    let updated;
+    try {
+      updated = await api.updateSkill(id, fields);
+    } catch (error) {
+      console.warn('API updateSkill failed, updating locally:', error.message);
+      updated = storageService.updateSkill(id, fields);
+    }
+    if (updated) {
+      const updatedSkills = skills.map((s) => (s.id === id ? updated : s));
+      setSkills(updatedSkills);
+      showToast('Skill updated successfully.');
+      return updated;
+    }
   };
 
-  const handleDeleteSkill = (id) => {
-    const filtered = apiDeleteSkill(id);
+  const handleDeleteSkill = async (id) => {
+    try {
+      await api.deleteSkill(id);
+    } catch (error) {
+      console.warn('API deleteSkill failed, removing locally:', error.message);
+      storageService.deleteSkill(id);
+    }
+    const filtered = skills.filter((s) => s.id !== id);
     setSkills(filtered);
     showToast('Skill removed.', 'info');
   };
 
   // Goal Operations
-  const handleAddGoal = (goalData) => {
-    const newGoal = apiAddGoal({ userId: currentUser?.id, ...goalData });
+  const handleAddGoal = async (goalData) => {
+    let newGoal;
+    try {
+      newGoal = await api.addGoal(goalData);
+    } catch (error) {
+      console.warn('API addGoal failed, adding locally:', error.message);
+      newGoal = storageService.addGoal({ userId: currentUser?.id, ...goalData });
+    }
     const updatedGoals = [...goals, newGoal];
     setGoals(updatedGoals);
     showToast(`Learning goal "${newGoal.title}" created!`);
@@ -122,24 +164,44 @@ export const DataProvider = ({ children }) => {
     return newGoal;
   };
 
-  const handleUpdateGoal = (id, fields) => {
-    const updated = apiUpdateGoal(id, fields);
-    const updatedGoals = goals.map((g) => (g.id === id ? updated : g));
-    setGoals(updatedGoals);
-    showToast('Goal updated!');
-    triggerAchievementCheck(updatedGoals, null, null, null);
-    return updated;
+  const handleUpdateGoal = async (id, fields) => {
+    let updated;
+    try {
+      updated = await api.updateGoal(id, fields);
+    } catch (error) {
+      console.warn('API updateGoal failed, updating locally:', error.message);
+      updated = storageService.updateGoal(id, fields);
+    }
+    if (updated) {
+      const updatedGoals = goals.map((g) => (g.id === id ? updated : g));
+      setGoals(updatedGoals);
+      showToast('Goal updated!');
+      triggerAchievementCheck(updatedGoals, null, null, null);
+      return updated;
+    }
   };
 
-  const handleDeleteGoal = (id) => {
-    const filtered = apiDeleteGoal(id);
+  const handleDeleteGoal = async (id) => {
+    try {
+      await api.deleteGoal(id);
+    } catch (error) {
+      console.warn('API deleteGoal failed, removing locally:', error.message);
+      storageService.deleteGoal(id);
+    }
+    const filtered = goals.filter((g) => g.id !== id);
     setGoals(filtered);
     showToast('Goal deleted.', 'info');
   };
 
   // Activity Operations
-  const handleAddActivity = (activityData) => {
-    const newAct = apiAddActivity({ userId: currentUser?.id, ...activityData });
+  const handleAddActivity = async (activityData) => {
+    let newAct;
+    try {
+      newAct = await api.addActivity(activityData);
+    } catch (error) {
+      console.warn('API addActivity failed, adding locally:', error.message);
+      newAct = storageService.addActivity({ userId: currentUser?.id, ...activityData });
+    }
     const updatedActs = [newAct, ...activities];
     setActivities(updatedActs);
     showToast(`Logged activity "${newAct.title}"! 🔥`);
@@ -147,69 +209,68 @@ export const DataProvider = ({ children }) => {
     return newAct;
   };
 
-  const handleDeleteActivity = (id) => {
-    const filtered = apiDeleteActivity(id);
+  const handleDeleteActivity = async (id) => {
+    try {
+      await api.deleteActivity(id);
+    } catch (error) {
+      console.warn('API deleteActivity failed, removing locally:', error.message);
+      storageService.deleteActivity(id);
+    }
+    const filtered = activities.filter((a) => a.id !== id);
     setActivities(filtered);
     showToast('Activity deleted from history.', 'info');
   };
 
   // Connection Operations
-  const handleSendConnection = (receiverId) => {
+  const handleSendConnection = async (receiverId) => {
     if (!currentUser) return;
-    const conn = apiSendConnectionRequest(currentUser.id, receiverId);
-    refreshAllData();
+    let conn;
+    try {
+      conn = await api.sendConnectionRequest(receiverId);
+      await refreshAllData();
+    } catch (error) {
+      console.warn('API sendConnectionRequest failed, adding locally:', error.message);
+      conn = storageService.sendConnectionRequest(currentUser.id, receiverId);
+      setConnections(storageService.getConnections());
+    }
     showToast('Connection request sent!');
-    triggerAchievementCheck(null, null, null, getConnections());
+    triggerAchievementCheck(null, null, null, connections);
     return conn;
   };
 
-  const handleUpdateConnection = (id, status) => {
-    apiUpdateConnectionStatus(id, status);
-    refreshAllData();
+  const handleUpdateConnection = async (id, status) => {
+    try {
+      await api.updateConnectionStatus(id, status);
+      await refreshAllData();
+    } catch (error) {
+      console.warn('API updateConnectionStatus failed, updating locally:', error.message);
+      storageService.updateConnectionStatus(id, status);
+      setConnections(storageService.getConnections());
+    }
     showToast(`Connection status updated to ${status}.`);
   };
 
   // Notification Operations
-  const handleMarkNotifRead = (id) => {
-    apiMarkNotifRead(id);
-    setNotifications(getNotifications());
-  };
-
-  const handleMarkAllNotifsRead = () => {
-    if (!currentUser) return;
-    apiMarkAllNotifsRead(currentUser.id);
-    setNotifications(getNotifications());
-    showToast('All notifications marked as read.');
-  };
-
-  // Import / Export / Reset
-  const handleExportData = () => {
-    const jsonStr = exportDataJSON();
-    const blob = new Blob([jsonStr], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `SkillSwap_Backup_${new Date().toISOString().split('T')[0]}.json`;
-    a.click();
-    showToast('Exported SkillSwap data successfully!');
-  };
-
-  const handleImportData = (jsonString) => {
-    const result = importDataJSON(jsonString);
-    if (result.success) {
-      refreshAllData();
-      showToast('Data imported and state restored successfully!');
-      return true;
-    } else {
-      showToast(`Import failed: ${result.error}`, 'error');
-      return false;
+  const handleMarkNotifRead = async (id) => {
+    try {
+      await api.markNotifRead(id);
+    } catch (error) {
+      storageService.markNotificationAsRead(id);
     }
+    const updated = notifications.map((n) => (n.id === id ? { ...n, read: true } : n));
+    setNotifications(updated);
   };
 
-  const handleResetData = () => {
-    apiResetAllData();
-    refreshAllData();
-    showToast('All data has been reset to demo state.', 'info');
+  const handleMarkAllNotifsRead = async () => {
+    if (!currentUser) return;
+    try {
+      await api.markAllNotifsRead();
+    } catch (error) {
+      storageService.markAllNotificationsAsRead(currentUser.id);
+    }
+    const updated = notifications.map((n) => ({ ...n, read: true }));
+    setNotifications(updated);
+    showToast('All notifications marked as read.');
   };
 
   return (
@@ -229,7 +290,9 @@ export const DataProvider = ({ children }) => {
         searchQuery,
         setSearchQuery,
         showToast,
+        clearToast,
         refreshAllData,
+        loadingData,
 
         // Handlers
         addSkill: handleAddSkill,
@@ -247,11 +310,7 @@ export const DataProvider = ({ children }) => {
         updateConnectionStatus: handleUpdateConnection,
 
         markNotifRead: handleMarkNotifRead,
-        markAllNotifsRead: handleMarkAllNotifsRead,
-
-        exportData: handleExportData,
-        importData: handleImportData,
-        resetData: handleResetData
+        markAllNotifsRead: handleMarkAllNotifsRead
       }}
     >
       {children}

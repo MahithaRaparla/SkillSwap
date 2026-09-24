@@ -48,7 +48,7 @@ const ProtectedRoute = ({ children }) => {
 
 const AppContent = () => {
   const { currentUser } = useAuth();
-  const { toast, unlockedAchievementModal, setUnlockedAchievementModal, showToast } = useData();
+  const { toast, clearToast, unlockedAchievementModal, setUnlockedAchievementModal } = useData();
   const location = useLocation();
 
   const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
@@ -189,7 +189,7 @@ const AppContent = () => {
       {!isAuthPage && <Footer />}
 
       {/* Global Toasts & Achievement Modals */}
-      <Toast toast={toast} onClose={() => {}} />
+      <Toast toast={toast} onClose={clearToast} />
       <AchievementModal
         achievement={unlockedAchievementModal}
         onClose={() => setUnlockedAchievementModal(null)}

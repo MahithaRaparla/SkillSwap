@@ -94,6 +94,41 @@ export const setCurrentUser = (user) => {
   }
 };
 
+export const login = (emailOrUsername, password) => {
+  const users = getUsers();
+  const found = users.find(
+    (u) =>
+      u.email.toLowerCase() === emailOrUsername.toLowerCase() ||
+      u.username.toLowerCase() === emailOrUsername.toLowerCase()
+  );
+
+  if (found) {
+    setCurrentUser(found);
+    return { success: true, user: found, token: `demo_token_${found.id}` };
+  }
+  // Default to first user if demo mode login
+  const defaultUser = users[0] || INITIAL_USERS[0];
+  setCurrentUser(defaultUser);
+  return { success: true, user: defaultUser, token: `demo_token_${defaultUser.id}` };
+};
+
+export const register = (userData) => {
+  const users = getUsers();
+  const newUser = {
+    id: `u_${Date.now()}`,
+    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80',
+    status: 'Student',
+    location: 'San Francisco, CA',
+    bio: 'New learner on SkillBridge!',
+    interests: ['Programming', 'Design'],
+    ...userData
+  };
+  users.push(newUser);
+  saveUsers(users);
+  setCurrentUser(newUser);
+  return { success: true, user: newUser, token: `demo_token_${newUser.id}` };
+};
+
 export const updateUserProfile = (userId, updatedFields) => {
   const users = getUsers();
   const index = users.findIndex((u) => u.id === userId);

@@ -18,13 +18,15 @@ import {
   Target
 } from 'lucide-react';
 
+const getId = (v) => (typeof v === 'object' && v ? (v.id || v._id?.toString()) : v);
+
 export const PublicProfilePage = () => {
   const { id } = useParams();
   const { currentUser } = useAuth();
   const { users, skills, connections, sendConnectionRequest } = useData();
   const navigate = useNavigate();
 
-  const targetUser = users.find((u) => u.id === id) || users.find((u) => u.username === id);
+  const targetUser = users.find((u) => getId(u) === id) || users.find((u) => u.username === id);
 
   if (!targetUser) {
     return (
@@ -40,24 +42,27 @@ export const PublicProfilePage = () => {
     );
   }
 
-  const userSkills = skills.filter((s) => s.userId === targetUser.id);
+  const currentUserId = getId(currentUser);
+  const targetUserId = getId(targetUser);
+
+  const userSkills = skills.filter((s) => getId(s.userId) === targetUserId);
   const skillsTeach = userSkills.filter((s) => s.type === 'teach');
   const skillsLearn = userSkills.filter((s) => s.type === 'learn');
 
-  const isSelf = currentUser?.id === targetUser.id;
+  const isSelf = currentUserId === targetUserId;
   const matchResult = currentUser && !isSelf ? calculateSkillMatch(currentUser, targetUser, skills) : null;
 
   const isConnected = connections.some(
     (c) =>
-      ((c.requesterId === currentUser?.id && c.receiverId === targetUser.id) ||
-        (c.requesterId === targetUser.id && c.receiverId === currentUser?.id)) &&
+      ((getId(c.requesterId) === currentUserId && getId(c.receiverId) === targetUserId) ||
+        (getId(c.requesterId) === targetUserId && getId(c.receiverId) === currentUserId)) &&
       c.status === 'Accepted'
   );
 
   const isPending = connections.some(
     (c) =>
-      ((c.requesterId === currentUser?.id && c.receiverId === targetUser.id) ||
-        (c.requesterId === targetUser.id && c.receiverId === currentUser?.id)) &&
+      ((getId(c.requesterId) === currentUserId && getId(c.receiverId) === targetUserId) ||
+        (getId(c.requesterId) === targetUserId && getId(c.receiverId) === currentUserId)) &&
       c.status === 'Pending'
   );
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sparkles, Heart } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 
 export const Footer = () => {
   return (
@@ -14,7 +14,7 @@ export const Footer = () => {
         </div>
 
         <p className="text-xs text-slate-500 flex items-center gap-1">
-          Built for Community Skill Exchange & Peer Learning • Persistent Browser LocalStorage Architecture
+          Built for Community Skill Exchange & Peer Learning • Powered by Express REST API & MongoDB Atlas
         </p>
       </div>
     </footer>
